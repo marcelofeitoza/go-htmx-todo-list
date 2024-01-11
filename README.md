@@ -2,27 +2,27 @@
 
 ## Overview
 
-Todo list utilizando Go e HTMX. Permite aos usuários adicionar, atualizar o status e deletar tarefas.
+A todo list application using Go and HTMX. It allows users to add, update the status of, and delete tasks.
 
 ## Features
 
-- Adicionar novas tarefas
-- Marcar tarefas como concluídas ou pendentes
-- Deletar tarefas da lista
+- Add new tasks
+- Mark tasks as completed or pending
+- Delete tasks from the list
 
 ## Prerequisites
 
-Antes de iniciar, você precisará ter o Go instalado no seu sistema. O Go pode ser baixado e instalado a partir do [site oficial do Go](https://golang.org/dl/).
+Before you begin, you will need to have Go installed on your system. Go can be downloaded and installed from the [official Go website](https://golang.org/dl/).
 
 ## Installation
 
-1. Clone o repositório para sua máquina local usando `git`:
+1. Clone the repository to your local machine using `git`:
 
 ```sh
 git clone https://github.com/marcelofeitoza/go-htmx-todo-list
 ```
 
-2. Navegue para o diretório do projeto:
+2. Navigate to the project directory:
 
 ```sh
 cd go-htmx-todo-list
@@ -30,10 +30,10 @@ cd go-htmx-todo-list
 
 ## Running the Application
 
-Para rodar o aplicativo, execute o seguinte comando no diretório do projeto:
+To run the application, execute the following command in the project directory:
 
 ```sh
 go run main.go
 ```
 
-Após iniciar o servidor, você pode acessar o aplicativo de lista de tarefas navegando para `http://localhost:8080` no seu navegador web.
+After starting the server, you can access the todo list application by navigating to http://localhost:8080 in your web browser.
