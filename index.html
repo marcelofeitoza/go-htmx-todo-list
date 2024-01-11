@@ -43,7 +43,7 @@
 
                   <button
                     class="btn btn-danger"
-                    hx-put="/delete-todo"
+                    hx-delete="/delete-todo"
                     hx-target="#todo-item-{{ .Id }}"
                     hx-indicator="#spinner-delete-{{ .Id }}"
                     hx-swap="outerHTML"

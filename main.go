@@ -28,12 +28,12 @@ var (
 func main() {
 	fmt.Println("Hello, world")
 
-	h1 := func(w http.ResponseWriter, _ *http.Request) {
+	render := func(w http.ResponseWriter, _ *http.Request) {
 		tmpl := template.Must(template.ParseFiles("index.html"))
 		tmpl.Execute(w, todos)
 	}
 
-	h2 := func(w http.ResponseWriter, r *http.Request) {
+	addTodo := func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(1 * time.Second)
 		title := r.PostFormValue("title")
 		currentId += 1
@@ -43,7 +43,7 @@ func main() {
 		tmpl.ExecuteTemplate(w, "todo-list-element", todo)
 	}
 
-	h3 := func(w http.ResponseWriter, r *http.Request) {
+	updateTodo := func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(1 * time.Second)
 		r.ParseForm()
 		taskIDStr := r.FormValue("taskID")
@@ -71,7 +71,7 @@ func main() {
 		http.Error(w, "Todo item not found", http.StatusNotFound)
 	}
 
-	h4 := func(w http.ResponseWriter, r *http.Request) {
+	deleteTodo := func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(1 * time.Second)
 		r.ParseForm()
 		taskIDStr := r.FormValue("taskID")
@@ -91,10 +91,10 @@ func main() {
 		http.Error(w, "Todo item not found", http.StatusNotFound)
 	}
 
-	http.HandleFunc("/", h1)
-	http.HandleFunc("/add-todo/", h2)
-	http.HandleFunc("/toggle-todo/", h3)
-	http.HandleFunc("/delete-todo/", h4)
+	http.HandleFunc("/", render)
+	http.HandleFunc("/add-todo/", addTodo)
+	http.HandleFunc("/toggle-todo/", updateTodo)
+	http.HandleFunc("/delete-todo/", deleteTodo)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
