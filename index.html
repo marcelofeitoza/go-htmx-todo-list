@@ -18,11 +18,45 @@
         <h1 class="mb-4">Todo List</h1>
 
         <ul class="list-group fs-5 me-5" id="todo-list">
-          {{ range .Todos }} {{ block "todo-list-element" .}}
-          <li class="list-group-item bg-primary text-white">
-            {{.Title}} - {{.Status}}
+          {{ range .Todos }} {{ block "todo-list-element" . }}
+          <li
+            class="list-group-item bg-primary text-white d-flex justify-content-between w-full"
+            id="todo-item-{{ .Id }}"
+          >
+            #{{ .Id }} {{ .Title }} - {{ .Status }}
+            <div class="ml-auto w-auto">
+              <button
+                class="btn btn-secondary"
+                hx-put="/toggle-todo"
+                hx-target="#todo-item-{{ .Id }}"
+                hx-indicator="#spinner-put-{{ .Id }}"
+                hx-swap="outerHTML"
+                hx-vals='{"taskID": {{ .Id }}}'
+              >
+                <span
+                  class="spinner-border spinner-border-sm htmx-indicator"
+                  id="spinner-put-{{ .Id }}"
+                ></span>
+                Mark as {{ if .Status }}complete{{ else }}to-do{{ end }}
+              </button>
+
+              <button
+                class="btn btn-danger"
+                hx-put="/delete-todo"
+                hx-target="#todo-item-{{ .Id }}"
+                hx-indicator="#spinner-delete-{{ .Id }}"
+                hx-swap="outerHTML"
+                hx-vals='{"taskID": {{ .Id }}}'
+              >
+                <span
+                  class="spinner-border spinner-border-sm htmx-indicator"
+                  id="spinner-delete-{{ .Id }}"
+                ></span>
+                Delete task #{{ .Id }}
+              </button>
+            </div>
           </li>
-          {{ end }} {{ end }}
+          {{ end }}{{ end }}
         </ul>
       </div>
 
@@ -42,6 +76,7 @@
               name="title"
               id="todo-title"
               class="form-control"
+              required="true"
             />
           </div>
 
