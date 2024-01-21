@@ -24,7 +24,8 @@
                 class="list-group-item border border-primary text-black mb-2 rounded d-flex justify-content-between w-full"
                 id="todo-item-{{ .Id }}"
               >
-                #{{ .Id }} {{ .Title }} - {{ .Status }}
+                #{{ .Id }} {{ .Title }} - {{ if .Status }}To
+                do!{{else}}Done{{end}}
                 <div class="ml-auto w-auto">
                   <button
                     class="btn btn-secondary"
@@ -43,7 +44,7 @@
 
                   <button
                     class="btn btn-danger"
-                    hx-delete="/delete-todo"
+                    hx-delete="/delete-todo/{{ .Id}}"
                     hx-target="#todo-item-{{ .Id }}"
                     hx-indicator="#spinner-delete-{{ .Id }}"
                     hx-swap="outerHTML"
@@ -53,7 +54,7 @@
                       class="spinner-border spinner-border-sm htmx-indicator"
                       id="spinner-delete-{{ .Id }}"
                     ></span>
-                    Delete task #{{ .Id }}
+                    Delete {{ .Id }}
                   </button>
                 </div>
               </li>

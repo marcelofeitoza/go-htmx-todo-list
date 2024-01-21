@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type Todo struct {
@@ -15,32 +18,59 @@ type Todo struct {
 	Status bool
 }
 
+type TodoUpdate struct {
+	TaskID int `json:"taskID"`
+}
+
 var (
-	currentId = 2
+	currentId = 0
 	todos     = map[string][]Todo{
-		"Todos": {
-			{Id: 1, Title: "Go to colleg", Status: false},
-			{Id: 2, Title: "Play with dog", Status: true},
-		},
+		"Todos": {},
 	}
 )
 
+var db *sqlx.DB
+
+func init() {
+	var err error
+	db, err = sqlx.Connect("postgres", "user=postgres_db dbname=postgres_db password=postgres_db sslmode=disable")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	db.Select(&todos, "SELECT id, title, status FROM todos ORDER BY id")
+}
+
 func main() {
-	fmt.Println("Hello, world")
+	fmt.Println("Listening at http://127.0.0.1:8080/")
+
+	defer db.Close()
 
 	render := func(w http.ResponseWriter, _ *http.Request) {
+		var todos []Todo
+		err := db.Select(&todos, "SELECT id, title, status FROM todos ORDER BY id")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		tmpl := template.Must(template.ParseFiles("index.html"))
-		tmpl.Execute(w, todos)
+		tmpl.Execute(w, map[string]interface{}{"Todos": todos})
 	}
 
 	addTodo := func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(1 * time.Second)
 		title := r.PostFormValue("title")
-		currentId += 1
-		todo := Todo{Id: currentId, Title: title, Status: false}
-		todos["Todos"] = append(todos["Todos"], todo)
+
+		var newTodo Todo
+		err := db.QueryRow("INSERT INTO todos (title, status) VALUES ($1, $2) RETURNING id, title, status", title, false).Scan(&newTodo.Id, &newTodo.Title, &newTodo.Status)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		tmpl := template.Must(template.ParseFiles("index.html"))
-		tmpl.ExecuteTemplate(w, "todo-list-element", todo)
+		tmpl.ExecuteTemplate(w, "todo-list-element", newTodo)
 	}
 
 	updateTodo := func(w http.ResponseWriter, r *http.Request) {
@@ -49,46 +79,70 @@ func main() {
 		taskIDStr := r.FormValue("taskID")
 		taskID, err := strconv.Atoi(taskIDStr)
 		if err != nil {
-			http.Error(w, "Invalid task ID", http.StatusBadRequest)
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
 			return
 		}
 
-		for i, task := range todos["Todos"] {
-			if task.Id == taskID {
-				todos["Todos"][i].Status = !task.Status
-				tmpl, err := template.ParseFiles("index.html")
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				err = tmpl.ExecuteTemplate(w, "todo-list-element", todos["Todos"][i])
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-				}
-				return
-			}
+		res, err := db.Exec("UPDATE todos SET status = NOT status WHERE id = $1", taskID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		http.Error(w, "Todo item not found", http.StatusNotFound)
+
+		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if rowsAffected == 0 {
+			http.Error(w, "Todo item not found", http.StatusNotFound)
+			return
+		}
+
+		var updatedTodo Todo
+		err = db.Get(&updatedTodo, "SELECT * FROM todos WHERE id = $1", taskID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		tmpl := template.Must(template.ParseFiles("index.html"))
+		err = tmpl.ExecuteTemplate(w, "todo-list-element", updatedTodo)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
 	deleteTodo := func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(1 * time.Second)
 		r.ParseForm()
-		taskIDStr := r.FormValue("taskID")
+		taskIDStr := r.URL.Path[len("/delete-todo/"):]
+
 		taskID, err := strconv.Atoi(taskIDStr)
 		if err != nil {
-			http.Error(w, "Invalid task ID", http.StatusBadRequest)
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
 			return
 		}
 
-		for i, task := range todos["Todos"] {
-			if task.Id == taskID {
-				todos["Todos"] = append(todos["Todos"][:i], todos["Todos"][i+1:]...)
-				w.WriteHeader(http.StatusOK)
-				return
-			}
+		res, err := db.Exec("DELETE FROM todos WHERE id = $1", taskID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		http.Error(w, "Todo item not found", http.StatusNotFound)
+
+		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if rowsAffected > 0 {
+			w.WriteHeader(http.StatusOK) // 200 OK
+			return
+		}
+		if rowsAffected == 0 {
+			http.Error(w, "Todo item not found", http.StatusNotFound)
+			return
+		}
 	}
 
 	http.HandleFunc("/", render)
