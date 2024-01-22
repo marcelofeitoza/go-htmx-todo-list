@@ -13,8 +13,8 @@ import (
 )
 
 type Todo struct {
-	Id     int
 	Title  string
+	Id     int
 	Status bool
 }
 
@@ -136,7 +136,7 @@ func main() {
 			return
 		}
 		if rowsAffected > 0 {
-			w.WriteHeader(http.StatusOK) // 200 OK
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 		if rowsAffected == 0 {
