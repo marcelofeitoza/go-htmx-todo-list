@@ -13,9 +13,9 @@ import (
 )
 
 type Todo struct {
-	Title  string
-	Id     int
-	Status bool
+	Title     string
+	Id        int
+	Completed bool
 }
 
 type TodoUpdate struct {
@@ -33,12 +33,21 @@ var db *sqlx.DB
 
 func init() {
 	var err error
-	db, err = sqlx.Connect("postgres", "user=postgres_db dbname=postgres_db password=postgres_db sslmode=disable")
+
+	for i := 0; i < 5; i++ {
+		db, err = sqlx.Connect("postgres", "user=postgres_db dbname=postgres_db password=postgres_db sslmode=disable host=postgres")
+		if err == nil {
+			break
+		}
+		log.Println("Retrying to connect to the database...")
+		time.Sleep(2 * time.Second)
+	}
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	db.Select(&todos, "SELECT id, title, status FROM todos ORDER BY id")
+	db.Select(&todos, "SELECT id, title, completed FROM todos ORDER BY id")
 }
 
 func main() {
@@ -48,7 +57,7 @@ func main() {
 
 	render := func(w http.ResponseWriter, _ *http.Request) {
 		var todos []Todo
-		err := db.Select(&todos, "SELECT id, title, status FROM todos ORDER BY id")
+		err := db.Select(&todos, "SELECT id, title, completed FROM todos ORDER BY id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -63,7 +72,7 @@ func main() {
 		title := r.PostFormValue("title")
 
 		var newTodo Todo
-		err := db.QueryRow("INSERT INTO todos (title, status) VALUES ($1, $2) RETURNING id, title, status", title, false).Scan(&newTodo.Id, &newTodo.Title, &newTodo.Status)
+		err := db.QueryRow("INSERT INTO todos (title, completed) VALUES ($1, $2) RETURNING id, title, completed", title, false).Scan(&newTodo.Id, &newTodo.Title, &newTodo.Completed)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -83,7 +92,7 @@ func main() {
 			return
 		}
 
-		res, err := db.Exec("UPDATE todos SET status = NOT status WHERE id = $1", taskID)
+		res, err := db.Exec("UPDATE todos SET completed = NOT completed WHERE id = $1", taskID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
