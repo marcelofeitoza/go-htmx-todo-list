@@ -68,7 +68,6 @@ func main() {
 	}
 
 	addTodo := func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(1 * time.Second)
 		title := r.PostFormValue("title")
 
 		var newTodo Todo
@@ -83,7 +82,6 @@ func main() {
 	}
 
 	updateTodo := func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(1 * time.Second)
 		r.ParseForm()
 		taskIDStr := r.FormValue("taskID")
 		taskID, err := strconv.Atoi(taskIDStr)
@@ -123,7 +121,6 @@ func main() {
 	}
 
 	deleteTodo := func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(1 * time.Second)
 		r.ParseForm()
 		taskIDStr := r.URL.Path[len("/delete-todo/"):]
 
